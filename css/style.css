@@ -1,0 +1,231 @@
+:root {
+  --sand: #e8b878;
+  --rust: #d9622b;
+  --ink: #2a1a12;
+  --paper: #fff3dc;
+  --teal: #1f8a8a;
+  --danger: #e0342a;
+  --sl: env(safe-area-inset-left, 0px);
+  --sr: env(safe-area-inset-right, 0px);
+  --st: env(safe-area-inset-top, 0px);
+  --sb: env(safe-area-inset-bottom, 0px);
+  --font: "Avenir Next Condensed", "DIN Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0; height: 100%; width: 100%;
+  overflow: hidden; position: fixed; inset: 0;
+  background: var(--ink); color: var(--paper);
+  font-family: var(--font); font-weight: 600;
+  touch-action: none; overscroll-behavior: none;
+  -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none; -webkit-text-size-adjust: 100%;
+}
+
+#game { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: #d9a860; }
+.hidden { display: none !important; }
+
+button {
+  font: inherit; color: inherit; border: 0; cursor: pointer; touch-action: none;
+  -webkit-user-select: none; user-select: none;
+}
+button:focus-visible, input:focus-visible { outline: 3px solid var(--paper); outline-offset: 2px; }
+
+/* HUD */
+#hud { position: absolute; inset: 0; pointer-events: none; }
+#hud button, #steerZone, #pedals { pointer-events: auto; }
+
+.hud-left {
+  position: absolute; top: calc(10px + var(--st)); left: calc(12px + var(--sl));
+  width: 190px; display: flex; flex-direction: column; gap: 6px;
+}
+.gauge { background: rgba(42,26,18,.78); border-radius: 10px; padding: 8px 10px; }
+.gauge-label { display: flex; justify-content: space-between; align-items: baseline; font-size: 15px; letter-spacing: .06em; }
+.gauge-label b { font-size: 26px; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.gauge-bar { height: 12px; background: #4a3226; border-radius: 6px; overflow: hidden; margin-top: 2px; }
+.gauge-bar i { display: block; height: 100%; width: 72%; background: var(--sand); }
+.gauge.low .gauge-bar i { background: var(--danger); }
+.gauge.low { animation: lowfuel 1s steps(2) infinite; }
+@keyframes lowfuel { 50% { background: rgba(150,30,20,.85); } }
+.gauge-sub { font-size: 14px; margin-top: 3px; opacity: .9; min-height: 17px; }
+.mini-bars { display: flex; gap: 6px; }
+.mini-bars > div { flex: 1; background: rgba(42,26,18,.78); border-radius: 8px; padding: 3px 6px 5px; font-size: 12px; }
+.mini { height: 6px; background: #4a3226; border-radius: 3px; overflow: hidden; margin-top: 1px; }
+.mini i { display: block; height: 100%; width: 100%; background: #9ed39a; }
+.mini i.bad { background: var(--danger); }
+
+.hud-top {
+  position: absolute; top: calc(10px + var(--st)); left: 50%; transform: translateX(-50%);
+  width: min(46vw, 560px); background: rgba(42,26,18,.78); border-radius: 10px; padding: 6px 14px 6px;
+}
+.track { position: relative; height: 24px; }
+.track-line { position: absolute; left: 0; right: 26px; top: 12px; height: 3px; background: #8c6b52; }
+.track-goal { position: absolute; right: 0; top: 2px; font-size: 16px; }
+.track-car { position: absolute; top: 4px; width: 14px; height: 18px; margin-left: -7px; border-radius: 4px; border: 2px solid var(--paper); }
+.track-car.me { background: var(--rust); z-index: 2; }
+.track-car.other { background: var(--teal); }
+.track-st { position: absolute; top: 8px; width: 6px; height: 10px; margin-left: -3px; background: var(--sand); border-radius: 1px; }
+.track-st.dry { background: #6c5140; }
+.readout { display: flex; justify-content: space-between; gap: 12px; font-size: 18px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#nextText { overflow: hidden; text-overflow: ellipsis; }
+
+.hud-right {
+  position: absolute; top: calc(10px + var(--st)); right: calc(12px + var(--sr));
+  display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+}
+#ping { background: rgba(42,26,18,.78); padding: 3px 9px; border-radius: 8px; font-size: 15px; font-variant-numeric: tabular-nums; }
+.chip { background: rgba(42,26,18,.78); padding: 9px 12px; border-radius: 8px; font-size: 15px; min-width: 88px; }
+
+#toasts {
+  position: absolute; top: calc(92px + var(--st)); left: 50%; transform: translateX(-50%);
+  width: min(52vw, 620px); display: flex; flex-direction: column; align-items: center; gap: 5px;
+}
+.toast {
+  background: rgba(255,243,220,.95); color: var(--ink); padding: 6px 14px; border-radius: 8px;
+  font-size: 20px; line-height: 1.15; text-align: center; animation: toast-in .18s ease-out;
+}
+.toast.bad { background: var(--danger); color: #fff; }
+@keyframes toast-in { from { transform: translateY(-8px); opacity: 0; } }
+
+#alarm {
+  position: absolute; left: 50%; top: 38%; transform: translate(-50%,-50%);
+  background: var(--danger); color: #fff; padding: 12px 22px; border-radius: 12px;
+  font-size: 30px; line-height: 1.1; text-align: center; width: min(50vw, 560px);
+  animation: alarm .4s steps(2) infinite;
+}
+#alarm small { display: block; font-size: 20px; margin-top: 4px; }
+@keyframes alarm { 50% { background: #8f1a12; } }
+
+#bigText {
+  position: absolute; left: 50%; top: 40%; transform: translate(-50%,-50%);
+  font-size: 110px; font-weight: 800; color: var(--paper);
+  text-shadow: 0 4px 0 var(--ink); text-align: center; white-space: nowrap;
+}
+
+/* Touch controls */
+#steerZone {
+  position: absolute; left: 0; bottom: 0; width: 34vw; height: 62vh;
+  padding-left: var(--sl); touch-action: none;
+}
+#steerTrack {
+  position: absolute; left: calc(26px + var(--sl)); bottom: calc(46px + var(--sb));
+  width: 240px; height: 76px; border-radius: 38px;
+  background: rgba(42,26,18,.42); border: 2px solid rgba(255,243,220,.5);
+}
+#steerKnob {
+  position: absolute; left: 50%; top: 50%; width: 66px; height: 66px; margin: -33px 0 0 -33px;
+  border-radius: 50%; background: rgba(255,243,220,.88); border: 3px solid var(--ink);
+  will-change: transform;
+}
+.zone-hint { position: absolute; left: calc(30px + var(--sl)); bottom: calc(18px + var(--sb)); font-size: 16px; opacity: .85; text-shadow: 0 1px 2px var(--ink); }
+
+#btnHorn {
+  position: absolute; left: calc(26px + var(--sl)); bottom: calc(142px + var(--sb));
+}
+.round {
+  width: 84px; height: 84px; border-radius: 50%; background: rgba(42,26,18,.84);
+  border: 3px solid var(--paper); font-size: 19px; line-height: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.round:active, .round.on { background: var(--rust); }
+.round:disabled { opacity: .45; }
+.round small { font-size: 12px; margin-top: 3px; line-height: 1; max-width: 70px; }
+.round.item span { font-size: 26px; }
+.round.hose.ready { background: var(--danger); animation: ready .5s steps(2) infinite; }
+@keyframes ready { 50% { background: var(--rust); } }
+
+#pedals {
+  position: absolute; right: calc(16px + var(--sr)); bottom: calc(16px + var(--sb));
+  width: 150px; height: 300px; touch-action: none;
+  display: flex; flex-direction: column; gap: 6px;
+}
+#pedalGas, #pedalBrake {
+  position: relative; border: 3px solid var(--paper); border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; overflow: hidden; pointer-events: none;
+}
+#pedalGas { flex: 2; background: rgba(35,120,70,.72); }
+#pedalBrake { flex: 1; background: rgba(150,40,30,.72); }
+#pedalGas.on { background: rgba(50,170,95,.92); }
+#pedalBrake.on { background: rgba(220,60,40,.95); }
+#pedalGas span, #pedalBrake span { position: relative; z-index: 1; }
+#gasLevel { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: rgba(255,243,220,.3); }
+
+#actions {
+  position: absolute; right: calc(176px + var(--sr)); bottom: calc(16px + var(--sb));
+  display: grid; grid-template-columns: 84px 84px; gap: 10px; justify-items: center;
+}
+#btnItem { grid-column: 1; grid-row: 1; }
+#btnHose { grid-column: 2; grid-row: 1; }
+#btnBoost { grid-column: 2; grid-row: 2; }
+
+#btnHold {
+  position: absolute; left: 50%; bottom: calc(40px + var(--sb)); transform: translateX(-50%);
+  width: 150px; height: 150px; border-radius: 50%; background: rgba(42,26,18,.86); padding: 0;
+  font-size: 21px; line-height: 1.1;
+}
+#btnHold svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+#btnHold circle { fill: none; stroke: rgba(255,243,220,.3); stroke-width: 7; }
+#holdRing { stroke: var(--sand) !important; stroke-dasharray: 100; stroke-dashoffset: 100; }
+#holdText { position: relative; display: block; padding: 0 16px; }
+
+/* Screens */
+.screen {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  padding: calc(16px + var(--st)) calc(16px + var(--sr)) calc(16px + var(--sb)) calc(16px + var(--sl));
+  background: rgba(42,26,18,.25);
+}
+.panel {
+  width: min(620px, 100%); background: rgba(42,26,18,.92); border-radius: 18px; padding: 24px 32px;
+  text-align: center; max-height: 100%; overflow: hidden;
+}
+.logo {
+  margin: 0; font-size: 92px; line-height: 1; font-weight: 800; letter-spacing: .04em;
+  color: var(--sand);
+}
+h2 { margin: 0 0 8px; font-size: 54px; line-height: 1.05; color: var(--sand); }
+.tagline { margin: 4px 0 18px; font-size: 25px; line-height: 1.2; }
+.menu-grid { display: flex; flex-direction: column; gap: 10px; }
+.menu-grid button, .panel > button, #conn button, .link-row button {
+  min-height: 58px; border-radius: 12px; background: #4a3226; font-size: 24px; padding: 8px 18px;
+}
+.menu-grid button.primary { background: var(--rust); }
+#joinForm { display: flex; gap: 10px; }
+#joinForm button { flex: 1; min-height: 58px; border-radius: 12px; background: var(--rust); font-size: 24px; }
+#codeInput {
+  width: 45%; min-width: 0; height: 58px; border-radius: 12px; border: 3px solid var(--sand); background: var(--paper);
+  color: var(--ink); font: inherit; font-size: 32px; text-align: center; letter-spacing: .18em;
+  text-transform: uppercase; -webkit-user-select: text; user-select: text;
+}
+.msg { min-height: 25px; margin: 12px 0 4px; font-size: 20px; color: var(--sand); }
+.scores { margin: 6px 0; font-size: 18px; opacity: .9; }
+.hint { margin: 8px 0 0; font-size: 16px; opacity: .8; line-height: 1.25; }
+.code { font-size: 110px; line-height: 1; font-weight: 800; letter-spacing: .12em; color: var(--paper); margin-left: .12em; }
+.link-row { margin: 12px 0; display: flex; align-items: center; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.link-row span { font-size: 15px; opacity: .8; word-break: break-all; }
+
+.overlay {
+  position: absolute; inset: 0; background: rgba(42,26,18,.86); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; padding: 24px; font-size: 24px; gap: 8px;
+}
+.overlay p { margin: 0; }
+#rotate { display: none; z-index: 20; background: var(--ink); }
+@media (orientation: portrait) { #rotate { display: flex; } }
+
+@media (max-height: 600px) {
+  .logo { font-size: 56px; }
+  .tagline { font-size: 18px; margin-bottom: 8px; }
+  .panel { padding: 12px 20px; }
+  .menu-grid button, #joinForm button, #codeInput { min-height: 44px; height: 44px; font-size: 19px; }
+  .code { font-size: 64px; }
+  #pedals { height: 220px; width: 120px; }
+  #actions { right: calc(146px + var(--sr)); }
+  .round { width: 66px; height: 66px; font-size: 15px; }
+  #actions { grid-template-columns: 66px 66px; gap: 6px; }
+  #btnHorn { bottom: calc(112px + var(--sb)); }
+  #steerTrack { width: 190px; height: 60px; bottom: calc(40px + var(--sb)); }
+  #steerKnob { width: 52px; height: 52px; margin: -26px 0 0 -26px; }
+  #btnHold { width: 110px; height: 110px; font-size: 16px; }
+}

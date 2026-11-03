@@ -1,0 +1,16 @@
+{
+  "name": "reserve-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WebSocket room server for Reserve",
+  "license": "MIT",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node --test test/"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

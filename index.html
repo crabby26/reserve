@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Reserve</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#2a1a12">
+<meta name="format-detection" content="telephone=no">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23d9622b'/%3E%3Cpath d='M6 22a10 10 0 0 1 20 0' fill='none' stroke='%23fff3dc' stroke-width='3'/%3E%3Cpath d='M16 22 9 14' stroke='%23fff3dc' stroke-width='3'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<!-- In-game HUD and touch controls -->
+<div id="hud" class="hidden">
+  <div class="hud-left">
+    <div class="gauge" id="fuelGauge">
+      <div class="gauge-label"><span>TANK</span><b id="fuelText">72 L</b></div>
+      <div class="gauge-bar"><i id="fuelBar"></i></div>
+      <div class="gauge-sub" id="rangeText"></div>
+    </div>
+    <div class="mini-bars">
+      <div title="Blech"><span>Blech</span><div class="mini"><i id="hpBar"></i></div></div>
+      <div title="Reifen"><span>Reifen</span><div class="mini"><i id="tireBar"></i></div></div>
+      <div title="Öl"><span>Öl</span><div class="mini"><i id="oilBar"></i></div></div>
+    </div>
+  </div>
+
+  <div class="hud-top">
+    <div class="track" id="track">
+      <div class="track-line"></div>
+      <div id="trackStations"></div>
+      <div class="track-car other" id="trackOther"></div>
+      <div class="track-car me" id="trackMe"></div>
+      <div class="track-goal">100</div>
+    </div>
+    <div class="readout">
+      <span id="kmText">0,0 km</span>
+      <span id="speedText">0 km/h</span>
+      <span id="nextText"></span>
+    </div>
+  </div>
+
+  <div class="hud-right">
+    <div id="ping">– ms</div>
+    <button id="btnSound" class="chip" type="button" aria-label="Ton an oder aus">Ton an</button>
+    <button id="btnTilt" class="chip" type="button" aria-label="Neigungssteuerung an oder aus">Neigen aus</button>
+  </div>
+
+  <div id="toasts"></div>
+  <div id="alarm" class="hidden"></div>
+  <div id="bigText" class="hidden"></div>
+
+  <div id="steerZone">
+    <div id="steerTrack"><div id="steerKnob"></div></div>
+    <div class="zone-hint">Lenken: Daumen ziehen</div>
+  </div>
+  <button id="btnHorn" class="round" type="button">Hupe</button>
+
+  <div id="pedals">
+    <div id="pedalGas"><span>GAS</span><i id="gasLevel"></i></div>
+    <div id="pedalBrake"><span>BREMSE</span></div>
+  </div>
+  <div id="actions">
+    <button id="btnItem" class="round item" type="button" disabled><span id="itemIcon">–</span><small id="itemName">Kein Item</small></button>
+    <button id="btnHose" class="round hose" type="button" disabled>Schlauch</button>
+    <button id="btnBoost" class="round boost" type="button">Stoß</button>
+  </div>
+  <button id="btnHold" class="hidden" type="button"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46"/><circle id="holdRing" cx="50" cy="50" r="46" pathLength="100"/></svg><span id="holdText">Halten</span></button>
+</div>
+
+<!-- Menu -->
+<div id="menu" class="screen">
+  <div class="panel">
+    <h1 class="logo">RESERVE</h1>
+    <p class="tagline">Zwei Rostlauben. Eine Wüste. Zu wenig Sprit für beide.</p>
+    <div class="menu-grid">
+      <button id="btnCreate" class="primary" type="button">Raum erstellen</button>
+      <form id="joinForm" autocomplete="off">
+        <input id="codeInput" maxlength="4" placeholder="CODE" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-label="Raumcode">
+        <button class="primary" type="submit">Beitreten</button>
+      </form>
+      <button id="btnSolo" type="button">Allein gegen Onkel Horst</button>
+    </div>
+    <p id="menuMsg" class="msg" role="status"></p>
+    <p id="scores" class="scores"></p>
+    <p class="hint">Seite im Vordergrund lassen: iOS pausiert Tabs im Hintergrund, und dann steht dein Wagen.</p>
+  </div>
+</div>
+
+<!-- Waiting room -->
+<div id="lobby" class="screen hidden">
+  <div class="panel">
+    <p class="tagline">Dein Raumcode</p>
+    <div id="roomCode" class="code">----</div>
+    <p class="link-row"><button id="btnCopy" type="button">Link kopieren</button><span id="roomLink"></span></p>
+    <p class="msg" id="lobbyMsg">Warte auf den zweiten Wagen. Gib den Code weiter und bleib hier.</p>
+    <button id="btnLeave" type="button">Zurück</button>
+  </div>
+</div>
+
+<!-- Results -->
+<div id="end" class="screen hidden">
+  <div class="panel">
+    <h2 id="endTitle"></h2>
+    <p id="endText" class="tagline"></p>
+    <p id="endStats" class="scores"></p>
+    <div class="menu-grid">
+      <button id="btnAgain" class="primary" type="button">Nochmal</button>
+      <button id="btnMenu" type="button">Zum Menü</button>
+    </div>
+  </div>
+</div>
+
+<!-- Connection trouble -->
+<div id="conn" class="overlay hidden" role="alert">
+  <h2>Verbindung verloren</h2>
+  <p id="connText">Neuer Versuch …</p>
+  <p class="hint">Seite im Vordergrund lassen: iOS pausiert Tabs im Hintergrund.</p>
+  <button id="btnConnGiveUp" class="hidden" type="button">Zum Menü</button>
+</div>
+
+<!-- Portrait hint -->
+<div id="rotate" class="overlay"><h2>iPad bitte quer halten</h2><p>Hochkant passt die Wüste nicht aufs Display.</p></div>
+
+<script src="config.js"></script>
+<script src="shared/world.js"></script>
+<script src="shared/sim.js"></script>
+<script src="shared/game.js"></script>
+<script src="shared/bot.js"></script>
+<script src="js/texts.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/input.js"></script>
+<script src="js/render.js"></script>
+<script src="js/net.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

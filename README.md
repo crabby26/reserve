@@ -6,6 +6,8 @@ Ohne Installation, ohne Konto, ohne IP-Adressen: Einer erstellt einen Raum, der 
 
 **Spielen:** https://crabby26.github.io/reserve/
 
+**Server:** https://reserve-server.onrender.com
+
 ## Spielen auf zwei iPads
 
 1. iPads quer halten und das Spiel in Safari öffnen.

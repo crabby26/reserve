@@ -8,3 +8,6 @@ services:
     startCommand: node server/index.js
     healthCheckPath: /health
     autoDeploy: true
+    envVars:
+      - key: ALLOWED_ORIGINS
+        value: https://crabby26.github.io

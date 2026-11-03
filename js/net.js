@@ -61,6 +61,7 @@ window.ReserveNet = (function () {
 
   // Pokes a sleeping host over plain HTTP, so it is awake by the time someone taps a button.
   function wake() {
+    if (!serverUrl()) return Promise.resolve();
     const url = serverUrl().replace(/^ws/, 'http') + '/health';
     return fetch(url, { mode: 'no-cors', cache: 'no-store' }).catch(() => {});
   }

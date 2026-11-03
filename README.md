@@ -4,6 +4,8 @@ Zwei Rostlauben, eine endlose Wüstenstraße, zu wenig Sprit für beide. **Reser
 
 Ohne Installation, ohne Konto, ohne IP-Adressen: Einer erstellt einen Raum, der andere gibt den Code ein.
 
+**Spielen:** https://crabby26.github.io/reserve/
+
 ## Spielen auf zwei iPads
 
 1. iPads quer halten und das Spiel in Safari öffnen.
@@ -87,11 +89,11 @@ Danach http://localhost:8787 öffnen. Das Spiel verbindet sich auf localhost aut
 
 ## Server deployen (Render, kostenloser Tarif)
 
-1. Dieses Repo nach GitHub pushen und auf https://render.com anmelden.
-2. **New > Blueprint** wählen und das Repo verbinden. Render liest `render.yaml` und legt den Dienst `reserve-server` an.
+1. Auf https://render.com anmelden.
+2. [Blueprint starten](https://render.com/deploy?repo=https://github.com/crabby26/reserve) oder **New > Blueprint** wählen und das Repo verbinden. Render liest `render.yaml` und legt den Dienst `reserve-server` an.
 3. Die vergebene Adresse notieren, zum Beispiel `https://reserve-server-xxxx.onrender.com`.
 4. In `config.js` eintragen, mit `wss://` statt `https://`, committen und pushen.
-5. Optional in Render die Umgebungsvariable `ALLOWED_ORIGINS` auf die Pages-Adresse setzen, zum Beispiel `https://NAME.github.io`. Dann akzeptiert der Server nur Verbindungen von dort.
+5. `render.yaml` setzt `ALLOWED_ORIGINS` auf `https://crabby26.github.io`. Der Server akzeptiert also nur Verbindungen von dort. Wer das Repo forkt, muss den Wert anpassen.
 
 Prüfen: `https://…onrender.com/health` muss `{"ok":true}` zeigen.
 

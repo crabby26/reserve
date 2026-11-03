@@ -172,6 +172,10 @@
   }
 
   function connect(hello) {
+    if (!ReserveNet.serverUrl()) {
+      $('menuMsg').textContent = 'Der Online-Server ist noch nicht eingerichtet. Solange fährt nur Onkel Horst.';
+      return;
+    }
     if (net) net.close();
     net = new ReserveNet.WsTransport(onMessage, onConnState);
     net.begin(hello);

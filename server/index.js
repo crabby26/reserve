@@ -4,6 +4,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { attachRooms } = require('./rooms.js');
 
 const PORT = Number(process.env.PORT) || 8787;
 const SERVE_STATIC = process.env.SERVE_STATIC !== '0' && !process.env.RENDER;
@@ -34,4 +35,12 @@ const server = http.createServer((req, res) => {
   });
 });
 
+const rooms = attachRooms(server);
+
 server.listen(PORT, () => console.log('Reserve server on port ' + PORT));
+
+process.on('SIGTERM', () => {
+  rooms.close();
+  server.close(() => process.exit(0));
+  setTimeout(() => process.exit(0), 2000).unref();
+});

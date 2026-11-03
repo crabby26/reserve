@@ -8,6 +8,8 @@
   const $ = (id) => document.getElementById(id);
 
   const INTERP_DELAY = 110;     // ms behind the newest snapshot for remote objects
+  // The dev duo page runs two clients in one tab, and those share sessionStorage.
+  const SESSION_KEY = 'reserve.session' + (new URLSearchParams(location.search).get('p') || '');
 
   let net = null, world = null, you = 0, solo = false;
   let phase = 'menu';           // menu | lobby | play | end
@@ -22,7 +24,7 @@
   let acc = 0, lastT = 0, boostReq = 0, sendAcc = 0;
   let cam = { x: 0, y: 0, zoom: 0.9 };
   let hudT = 0, slowFrames = 0, fpsT = 0, fpsN = 0;
-  let toastN = 0;
+  let toastN = 0, connTimer = null, forfeited = false;
 
   function makeWorld(seed) {
     world = W.createWorld(seed);
@@ -65,21 +67,115 @@
       case 'start': return onStart(m);
       case 's': return onSnapshot(m);
       case 'e': return onEvent(m);
+      case 'room': return onRoom(m);
+      case 'peer': return onPeer(m);
+      case 'err': return onError(m);
       default: return undefined;
+    }
+  }
+
+  function onRoom(m) {
+    you = m.you;
+    try { sessionStorage.setItem(SESSION_KEY, JSON.stringify({ code: m.code, token: m.token })); } catch (e) { /* ignore */ }
+    if (m.resumed || m.you === 1) return;
+    const link = location.origin + location.pathname + '?room=' + m.code;
+    $('roomCode').textContent = m.code;
+    $('roomLink').textContent = link;
+    $('lobbyMsg').textContent = 'Warte auf den zweiten Wagen. Gib den Code weiter und bleib hier.';
+    phase = 'lobby';
+    showScreen('lobby');
+  }
+
+  function onPeer(m) {
+    if (m.again) { toast('Der andere will nochmal.'); $('endStats').textContent = 'Der andere will nochmal. Du auch?'; return; }
+    if (phase === 'play') toast(m.on ? 'Dein Gegner ist wieder da.' : 'Dein Gegner hat ein Funkloch. Sein Wagen steht.', !m.on);
+    else if (phase === 'end' && !m.on) $('endStats').textContent = 'Der andere ist weg. Das war es wohl mit der Revanche.';
+  }
+
+  const ERRORS = {
+    unknown: 'Diesen Raum gibt es nicht. Code vertippt?',
+    taken: 'Der Raum ist schon voll.',
+    gone: 'Der Raum existiert nicht mehr.',
+    full: 'Der Server ist gerade voll. Später nochmal.',
+  };
+
+  function onError(m) {
+    clearSession();
+    if (net) { net.close(); net = null; }
+    $('conn').classList.add('hidden');
+    phase = 'menu';
+    world = null;
+    showScreen('menu');
+    $('menuMsg').textContent = ERRORS[m.m] || 'Das hat nicht geklappt.';
+  }
+
+  function clearSession() {
+    try { sessionStorage.removeItem(SESSION_KEY); } catch (e) { /* ignore */ }
+    const params = new URLSearchParams(location.search);
+    if (params.has('room')) {
+      params.delete('room');
+      const rest = params.toString();
+      history.replaceState(null, '', location.pathname + (rest ? '?' + rest : ''));
     }
   }
 
   function onStart(m) {
     you = m.you; solo = !!m.solo;
     makeWorld(m.seed);
-    car = S.createCar(0, 0);
-    seq = 0; pending = []; sendBuf = []; snaps = []; last = null;
-    errX = errY = errA = 0;
+    if (m.resume && car && phase === 'play') {
+      // Back after a dropout: keep counting from what the server has seen.
+      seq = Math.max(seq, m.ack);
+      pending = []; sendBuf = [];
+    } else {
+      car = S.createCar(0, 0);
+      seq = m.ack || 0; pending = []; sendBuf = []; snaps = []; last = null;
+      errX = errY = errA = 0;
+      cam.x = world.roadX(0); cam.y = -100;
+      if (!m.resume) toast('Du fährst den ' + T.cars[you] + '.');
+    }
     phase = 'play';
     showScreen('hud');
     $('endTitle').textContent = '';
-    cam.x = world.roadX(0); cam.y = -100;
-    toast('Du fährst den ' + T.cars[you] + '.');
+  }
+
+  function onConnState(state, deadline) {
+    clearInterval(connTimer);
+    if (state === 'open') {
+      $('conn').classList.add('hidden');
+      $('menuMsg').textContent = '';
+      return;
+    }
+    if (state === 'waking') {
+      $('menuMsg').textContent = 'Server wird geweckt. Das kann bis zu einer Minute dauern …';
+      return;
+    }
+    if (state === 'lost') {
+      $('conn').classList.remove('hidden');
+      $('btnConnGiveUp').classList.add('hidden');
+      const show = () => {
+        const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+        $('connText').textContent = 'Neuer Versuch … noch ' + left + ' Sekunden';
+      };
+      show();
+      connTimer = setInterval(show, 500);
+      return;
+    }
+    if (state === 'failed') {
+      if (phase === 'menu') {
+        $('menuMsg').textContent = 'Server nicht erreichbar. Später nochmal versuchen.';
+        if (net) { net.close(); net = null; }
+        return;
+      }
+      $('conn').classList.remove('hidden');
+      $('connText').textContent = 'Das wird nichts mehr. Die Verbindung bleibt weg.';
+      $('btnConnGiveUp').classList.remove('hidden');
+    }
+  }
+
+  function connect(hello) {
+    if (net) net.close();
+    net = new ReserveNet.WsTransport(onMessage, onConnState);
+    net.begin(hello);
   }
 
   function copyCar(from, to) {
@@ -131,6 +227,7 @@
         break;
       case 'win': {
         if (last) last.w = e.p;
+        forfeited = !!e.forfeit;
         A.sfx[mine ? 'win' : 'lose']();
         break;
       }
@@ -143,7 +240,8 @@
     A.setEngine(0, 0, false);
     const won = m.w === you;
     $('endTitle').textContent = won ? T.winTitle : T.loseTitle;
-    $('endText').textContent = won ? say('win') : say('lose', { o: otherName() });
+    $('endText').textContent = forfeited && won ? T.forfeit : won ? say('win') : say('lose', { o: otherName() });
+    forfeited = false;
     const time = fmtTime(m.rt);
     let stats = 'Zeit: ' + time;
     try {
@@ -340,15 +438,19 @@
     const dt = Math.min(0.1, (t - lastT) / 1000 || 0);
     lastT = t;
     if (phase === 'play' && car) {
-      acc += dt;
-      const env = last ? last.env : null;
+      const live = solo || (net && net.connected);
       let inp = I.sample();
-      while (acc >= S.DT) {
-        inp = simStep(env);
-        acc -= S.DT;
+      // While offline the server cannot follow, so the car simply waits with it.
+      if (live) {
+        acc += dt;
+        const env = last ? last.env : null;
+        while (acc >= S.DT) {
+          inp = simStep(env);
+          acc -= S.DT;
+        }
+        sendAcc += dt;
+        if (sendAcc >= 1 / 30) { sendAcc = 0; flush(inp.h); }
       }
-      sendAcc += dt;
-      if (sendAcc >= 1 / 30) { sendAcc = 0; flush(inp.h); }
       const running = car.fuel > 0 && !car.panne && car.stall <= 0;
       A.setEngine(Math.min(1.2, Math.abs(S.speedOf(car)) / S.V_MAX), inp.g, running);
       updateHud(dt);
@@ -381,6 +483,9 @@
   }
 
   function backToMenu() {
+    clearSession();
+    clearInterval(connTimer);
+    $('menuMsg').textContent = '';
     if (net) { net.close(); net = null; }
     phase = 'menu';
     world = null;
@@ -417,13 +522,45 @@
       if (net) net.send({ t: 'again' });
       if (!solo) { $('btnAgain').disabled = true; $('btnAgain').textContent = 'Warte auf den anderen …'; }
     });
-    $('joinForm').addEventListener('submit', (e) => e.preventDefault());
-    $('btnCreate').addEventListener('click', () => { $('menuMsg').textContent = 'Online-Modus kommt im nächsten Schritt.'; });
+    $('joinForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const code = $('codeInput').value.trim().toUpperCase();
+      if (!/^[A-Z]{4}$/.test(code)) { $('menuMsg').textContent = 'Der Code hat vier Buchstaben.'; return; }
+      $('codeInput').blur();
+      connect({ t: 'join', code });
+    });
+    $('btnCreate').addEventListener('click', () => connect({ t: 'create' }));
+    $('btnLeave').addEventListener('click', backToMenu);
+    $('btnConnGiveUp').addEventListener('click', backToMenu);
+    $('btnCopy').addEventListener('click', async () => {
+      const link = $('roomLink').textContent;
+      try { await navigator.clipboard.writeText(link); $('btnCopy').textContent = 'Kopiert'; } catch (e) {
+        $('btnCopy').textContent = 'Bitte von Hand kopieren';
+      }
+      setTimeout(() => { $('btnCopy').textContent = 'Link kopieren'; }, 2000);
+    });
+  }
+
+  function startFromUrl() {
+    const params = new URLSearchParams(location.search);
+    const code = (params.get('room') || '').toUpperCase();
+    let session = null;
+    try { session = JSON.parse(sessionStorage.getItem(SESSION_KEY)); } catch (e) { /* ignore */ }
+    if (session && (!code || session.code === code)) {
+      // Page was reloaded in the middle of a game.
+      net = new ReserveNet.WsTransport(onMessage, onConnState);
+      net.resume(session);
+    } else if (/^[A-Z]{4}$/.test(code)) {
+      $('codeInput').value = code;
+      connect({ t: 'join', code });
+    }
   }
 
   wireUi();
   showScreen('menu');
   showScores();
+  ReserveNet.wake();
+  startFromUrl();
   requestAnimationFrame(loop);
 
   // Debug handle for tests and the console. Read-only use.

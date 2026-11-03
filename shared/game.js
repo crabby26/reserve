@@ -72,6 +72,14 @@
       this.emit({ k: 'win', p, time: round(this.raceTime, 100) });
     }
 
+    // The other player stayed away for too long.
+    forfeit(p) {
+      if (this.phase === 'over') return;
+      this.winner = p;
+      this.phase = 'over';
+      this.emit({ k: 'win', p, time: round(this.raceTime, 100), forfeit: true });
+    }
+
     tick(dt) {
       this.time += dt;
       if (this.phase === 'countdown') {

@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Reserve Duo-Test</title>
+<style>
+  body { margin: 0; background: #181210; color: #eee; font: 14px system-ui, sans-serif; overflow: hidden; }
+  .wrap { display: flex; gap: 6px; padding: 6px; }
+  .frame { position: relative; width: 584px; height: 406px; overflow: hidden; }
+  iframe { position: absolute; left: 0; top: 0; width: 1180px; height: 820px; border: 0; transform: scale(.495); transform-origin: 0 0; }
+</style>
+</head>
+<body>
+<!-- Local dev only: two iPad-sized clients side by side, each with its own game state. -->
+<div class="wrap">
+  <div class="frame"><iframe id="a" src="../index.html?p=a"></iframe></div>
+  <div class="frame"><iframe id="b" src="../index.html?p=b"></iframe></div>
+</div>
+</body>
+</html>

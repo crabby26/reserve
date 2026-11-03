@@ -116,7 +116,8 @@
     car.vx = fx * v - fy * lat;
     car.vy = fy * v + fx * lat;
     const wind = (env && env.wind) || 0;
-    car.x += (car.vx + wind) * dt;
+    // Crosswind only pushes a moving car. A parked one stays where it is.
+    car.x += (car.vx + wind * clamp(Math.abs(v) / 120, 0, 1)) * dt;
     car.y += car.vy * dt;
 
     // Consumption grows with the square of speed: patience saves fuel.

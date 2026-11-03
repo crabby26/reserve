@@ -6,8 +6,8 @@
 <style>
   body { margin: 0; background: #181210; color: #eee; font: 14px system-ui, sans-serif; overflow: hidden; }
   .wrap { display: flex; gap: 6px; padding: 6px; }
-  .frame { position: relative; width: 584px; height: 406px; overflow: hidden; }
-  iframe { position: absolute; left: 0; top: 0; width: 1180px; height: 820px; border: 0; transform: scale(.495); transform-origin: 0 0; }
+  .frame { position: relative; flex: none; width: 496px; height: 345px; overflow: hidden; }
+  iframe { position: absolute; left: 0; top: 0; width: 1180px; height: 820px; border: 0; transform: scale(.42); transform-origin: 0 0; }
 </style>
 </head>
 <body>
@@ -16,5 +16,6 @@
   <div class="frame"><iframe id="a" src="../index.html?p=a"></iframe></div>
   <div class="frame"><iframe id="b" src="../index.html?p=b"></iframe></div>
 </div>
+<script src="duo-test.js"></script>
 </body>
 </html>

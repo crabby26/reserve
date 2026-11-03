@@ -67,7 +67,7 @@ class Room {
     const g = this.game;
     return {
       t: 'start', seed: g.seed, you: p, resume, ack: g.acks[p],
-      looted: g.looted ? g.looted() : [],
+      looted: g.looted(),
     };
   }
 }
@@ -168,9 +168,9 @@ function attachRooms(httpServer, opts) {
           s: finite(r[1], -1, 1), g: finite(r[2], 0, 1), b: finite(r[3], 0, 1), x: r[4] ? 1 : 0,
         });
       }
-      if (g.setFlags) g.setFlags(p, !!m.h);
+      g.setFlags(p, !!m.h);
     } else if (m.t === 'a' && typeof m.a === 'string') {
-      if (g.act) g.act(p, m.a);
+      g.act(p, m.a);
     } else if (m.t === 'again' && g.phase === 'over') {
       room.again[p] = true;
       if (room.again[0] && room.again[1]) room.startGame();
@@ -222,7 +222,7 @@ function attachRooms(httpServer, opts) {
       }
       if (secTick) {
         const hold = options.slotHoldMs || SLOT_HOLD_MS;
-        const gone = room.slots.map((s) => !s || (s.lostAt && now - s.lostAt > hold));
+        const gone = room.slots.map((s) => !s || (s.lostAt > 0 && now - s.lostAt > hold));
         if (g && g.phase !== 'over') {
           if (gone[0] !== gone[1]) g.forfeit(gone[0] ? 1 : 0);
           else if (gone[0]) rooms.delete(code);

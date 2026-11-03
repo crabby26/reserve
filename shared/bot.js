@@ -29,11 +29,27 @@
         g = 1; b = 0;
       }
 
+      // Horst reads speed limit signs only when he happens to look up.
+      for (const r of world.radars) {
+        if (car.y > r.y && car.y - r.y < 500 && r.i % 2 === 0) g = Math.min(g, 0.55);
+      }
+
       const want = Math.atan2(tx - car.x, car.y - ty);
       const err = S.angleDiff(want, car.a);
       return { s: S.clamp(err * 2.6, -1, 1), g, b, x: 0 };
     };
   }
 
-  return { createBot };
+  // Occasional mischief, called about once per second by the solo transport.
+  function botMischief(game, p) {
+    const car = game.cars[p], other = game.cars[1 - p];
+    if (game.items[p].length && Math.random() < 0.08) game.act(p, 'item');
+    const d = Math.hypot(car.x - other.x, car.y - other.y);
+    if (d < 80 && Math.random() < 0.35) game.act(p, 'hose');
+    if (d < 200 && Math.random() < 0.12) game.act(p, 'horn');
+    if (game.hose && game.hose.to === p && Math.random() < 0.3) game.act(p, 'horn');
+    game.setFlags(p, !!car.panne);
+  }
+
+  return { createBot, botMischief };
 });

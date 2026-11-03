@@ -108,6 +108,7 @@ window.ReserveInput = (function () {
       if (e.code === 'KeyB') fire('boost');
       if (e.code === 'KeyE') fire('hose');
       if (e.code === 'KeyQ') fire('item');
+      if (e.code === 'ShiftLeft') fire('boost');
     });
     addEventListener('keyup', (e) => { keys[e.code] = false; });
     addEventListener('blur', () => { for (const k in keys) keys[k] = false; });

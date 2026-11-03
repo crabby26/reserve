@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: reserve-server
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: cd server && npm ci
+    startCommand: node server/index.js
+    healthCheckPath: /health
+    autoDeploy: true

@@ -53,6 +53,45 @@
       km += 13 + r() * 7;
     }
 
+    // Roadside content comes from its own stream, so tuning it never moves the stations.
+    const r2 = rng(seed ^ 0x2F6E2B1);
+    const nearStation = (y, d) => stations.some((s) => Math.abs(s.y - y) < d);
+
+    const wrecks = [];
+    for (let km = 2 + r2() * 2; km < GOAL_KM - 1; km += 1.4 + r2() * 1.8) {
+      const y = -km * KM;
+      const side = r2() < 0.5 ? -1 : 1, dist = 58 + r2() * 62, roll = r2(), rot = r2() * 6.283;
+      if (nearStation(y, 400)) continue;
+      wrecks.push({
+        i: wrecks.length, y, side, rot,
+        x: roadX(y) + side * (ROAD_HALF + dist),
+        kind: roll < 0.2 ? 'hut' : roll < 0.4 ? 'bus' : 'car',
+      });
+    }
+
+    const crates = [];
+    for (let km = 1.5 + r2(); km < GOAL_KM - 2; km += 1.6 + r2() * 2) {
+      const y = -km * KM;
+      const off = (r2() - 0.5) * 2 * (ROAD_HALF - 32);
+      if (nearStation(y, 300)) continue;
+      crates.push({ i: crates.length, y, x: roadX(y) + off });
+    }
+
+    const radars = [];
+    for (let km = 8 + r2() * 5; km < GOAL_KM - 3; km += 9 + r2() * 9) {
+      const y = -km * KM;
+      const side = r2() < 0.5 ? -1 : 1;
+      radars.push({ i: radars.length, y, side, x: roadX(y) + side * (ROAD_HALF + 26) });
+    }
+
+    const billboards = [];
+    for (let km = 0.7; km < GOAL_KM; km += 2.2 + r2() * 2.4) {
+      const y = -km * KM;
+      const side = r2() < 0.5 ? -1 : 1, idx = Math.floor(r2() * 1000);
+      if (nearStation(y, 400)) continue;
+      billboards.push({ y, side, idx, x: roadX(y) + side * (ROAD_HALF + 92) });
+    }
+
     // Tarmac test: the road with a forgiving shoulder, plus station forecourts.
     function paved(x, y) {
       const cx = roadX(y);
@@ -69,7 +108,7 @@
       return null;
     }
 
-    return { seed, roadX, roadAngle, paved, nextStation, stations, ROAD_HALF, KM, GOAL_KM, goalY: -GOAL_KM * KM };
+    return { seed, roadX, roadAngle, paved, nextStation, stations, wrecks, crates, radars, billboards, ROAD_HALF, KM, GOAL_KM, goalY: -GOAL_KM * KM };
   }
 
   return { createWorld, rng, KM, GOAL_KM, ROAD_HALF };

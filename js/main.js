@@ -3,7 +3,7 @@
 (function () {
   'use strict';
 
-  const S = ReserveSim, W = ReserveWorld, R = ReserveRender, A = ReserveAudio, I = ReserveInput;
+  const S = ReserveSim, W = ReserveWorld, R = ReserveRender, A = ReserveAudio, I = ReserveInput, F = ReserveFx;
   const { T, say } = ReserveTexts;
   const $ = (id) => document.getElementById(id);
 
@@ -24,7 +24,7 @@
   let acc = 0, lastT = 0, boostReq = 0, sendAcc = 0;
   let cam = { x: 0, y: 0, zoom: 0.9 };
   let hudT = 0, slowFrames = 0, fpsT = 0, fpsN = 0;
-  let toastN = 0, connTimer = null, forfeited = false;
+  let toastN = 0, connTimer = null;
 
   function makeWorld(seed) {
     world = W.createWorld(seed);
@@ -122,6 +122,7 @@
   function onStart(m) {
     you = m.you; solo = !!m.solo;
     makeWorld(m.seed);
+    F.reset(world, m.looted, toast);
     if (m.resume && car && phase === 'play') {
       // Back after a dropout: keep counting from what the server has seen.
       seq = Math.max(seq, m.ack);
@@ -227,27 +228,27 @@
         break;
       case 'win': {
         if (last) last.w = e.p;
-        forfeited = !!e.forfeit;
         A.sfx[mine ? 'win' : 'lose']();
         break;
       }
-      default: if (window.ReserveEvents) window.ReserveEvents(e, mine, o); break;
+      default: F.event(e, mine, o); break;
     }
   }
 
   function showEnd(m) {
     phase = 'end';
     A.setEngine(0, 0, false);
+    A.setWind(0);
+    F.hideAlarm();
     const won = m.w === you;
-    $('endTitle').textContent = won ? T.winTitle : T.loseTitle;
-    $('endText').textContent = forfeited && won ? T.forfeit : won ? say('win') : say('lose', { o: otherName() });
-    forfeited = false;
+    $('endTitle').textContent = m.ff ? (won ? T.forfeitTitle : T.forfeitLostTitle) : won ? T.winTitle : T.loseTitle;
+    $('endText').textContent = m.ff ? (won ? T.forfeit : T.forfeitLost) : won ? say('win') : say('lose', { o: otherName() });
     const time = fmtTime(m.rt);
     let stats = 'Zeit: ' + time;
     try {
       const k = solo ? 'reserve.best.solo' : 'reserve.best.duel';
       const best = Number(localStorage.getItem(k)) || 0;
-      if (won && (!best || m.rt < best)) {
+      if (won && !m.ff && (!best || m.rt < best)) {
         localStorage.setItem(k, String(m.rt));
         stats += ' · neue Bestzeit';
       } else if (best) stats += ' · Bestzeit: ' + fmtTime(best);
@@ -371,21 +372,11 @@
       stock: last ? last.stock : null,
       km: -car.y / W.KM,
     };
-    if (window.ReserveScene) window.ReserveScene(scene, { now, car, rx, ry, cars, oState, last, remoteAt, world, you, cam, dt });
-    drawEnts(scene, now);
+    const ents = snaps.length ? F.entsAt(remoteAt(now)) : [];
+    scene.drawWorld = (ctx, h) => F.drawRoadside(ctx, h, scene.stock, you, ents, now);
+    scene.drawTop = (ctx, h) => F.drawTop(ctx, h, cars, ents, last ? last.hose : null, now, dt);
+    scene.drawScreen = (ctx, sw, sh) => F.drawScreen(ctx, sw, sh, last ? last.env : null, dt);
     R.frame(cam, scene);
-  }
-
-  function drawEnts(scene, now) {
-    const q = snaps.length ? remoteAt(now) : null;
-    const prevDraw = scene.drawWorld;
-    scene.drawWorld = (ctx, h) => {
-      if (prevDraw) prevDraw(ctx, h);
-      if (!q) return;
-      for (const e of q.b.ents) {
-        if (e[1] === 'can') h.blit(h.sprites.can, e[2], e[3]);
-      }
-    };
   }
 
   function updateHud(dt) {
@@ -417,7 +408,7 @@
     $('trackMe').style.left = trackPos(km) + '%';
     const other = last.cars[1 - you];
     $('trackOther').style.left = trackPos(-other.y / W.KM) + '%';
-    $('ping').textContent = solo ? 'Solo' : (net && net.ping ? net.ping + ' ms' : '– ms');
+    $('ping').textContent = solo ? 'Solo' : (net && net.connected ? net.ping + ' ms' : '– ms');
 
     const big = $('bigText');
     if (last.ph === 'countdown') {
@@ -454,6 +445,7 @@
       const running = car.fuel > 0 && !car.panne && car.stall <= 0;
       A.setEngine(Math.min(1.2, Math.abs(S.speedOf(car)) / S.V_MAX), inp.g, running);
       updateHud(dt);
+      if (last) F.hud(car, last, you, dt, otherName());
     }
     if (phase === 'play' || phase === 'end') drawGameFrame(t, dt);
     else drawAttract(t, dt);
@@ -490,6 +482,7 @@
     phase = 'menu';
     world = null;
     A.setEngine(0, 0, false);
+    A.setWind(0);
     $('conn').classList.add('hidden');
     showScreen('menu');
     showScores();

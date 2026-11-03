@@ -4,7 +4,7 @@
 
 Alles für dieses Spiel neu erstellt, es gibt keine eingebundenen Asset-Dateien:
 
-- **Grafik:** wird zur Laufzeit per Canvas 2D gezeichnet (`js/render.js`, `js/fx.js`).
+- **Grafik:** Modelle und Texturen werden zur Laufzeit im Code erzeugt (`js/render3d.js`).
 - **Sound:** wird zur Laufzeit per Web Audio erzeugt (`js/audio.js`). Es gibt keine Sample-Dateien.
 - **Texte:** selbst geschrieben (`js/texts.js`).
 - **Fahrzeuge und Namen:** erfunden, zum Beispiel „Kombi Wüstenfuchs“ und „Pritsche Trockenpflaume“.
@@ -18,9 +18,8 @@ Es wird keine Schriftdatei ausgeliefert. Das Spiel nutzt, was auf dem Gerät ins
 | Name | Einsatz | Lizenz | Quelle |
 |---|---|---|---|
 | ws | WebSocket-Server, nur auf dem Server | MIT | https://github.com/websockets/ws |
-
-Der Client läuft ohne Bibliotheken.
+| three.js r149 | 3D-Darstellung im Client, liegt unter `vendor/` | MIT, Text in `vendor/three.LICENSE.txt` | https://github.com/mrdoob/three.js |
 
 ## Inspiration und Recherche
 
-Die Spielidee ist von Roadtrip-Spielen wie The Long Drive inspiriert. Von dort wurden weder Code noch Grafik, Sound, Texte oder Namen übernommen. Quellen der Recherche stehen in [`docs/recherche.md`](docs/recherche.md).
+Die Spielidee ist von Roadtrip-Spielen wie The Long Drive und A Dusty Trip (Roblox) inspiriert. Von dort wurden weder Code noch Grafik, Sound, Texte, Fahrzeuge oder Namen übernommen. Quellen der Recherche stehen in [`docs/recherche.md`](docs/recherche.md).

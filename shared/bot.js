@@ -45,7 +45,8 @@
     const car = game.cars[p], other = game.cars[1 - p];
     if (game.items[p].length && Math.random() < 0.08) game.act(p, 'item');
     const d = Math.hypot(car.x - other.x, car.y - other.y);
-    if (d < 80 && Math.random() < 0.35) game.act(p, 'hose');
+    // Horst lets you settle in before he starts stealing.
+    if (game.raceTime > 25 && d < 80 && Math.random() < 0.35) game.act(p, 'hose');
     if (d < 200 && Math.random() < 0.12) game.act(p, 'horn');
     if (game.hose && game.hose.to === p && Math.random() < 0.3) game.act(p, 'horn');
     game.setFlags(p, !!car.panne);

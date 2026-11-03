@@ -26,6 +26,9 @@ html, body {
 
 #game { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: #d9a860; }
 .hidden { display: none !important; }
+#flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+#flash.on { animation: flash .34s ease-out; }
+@keyframes flash { from { opacity: 1; } to { opacity: 0; } }
 
 button {
   font: inherit; color: inherit; border: 0; cursor: pointer; touch-action: none;
@@ -90,12 +93,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--paper); out
 @keyframes toast-in { from { transform: translateY(-8px); opacity: 0; } }
 
 #alarm {
-  position: absolute; left: 50%; top: 38%; transform: translate(-50%,-50%);
-  background: var(--danger); color: #fff; padding: 12px 22px; border-radius: 12px;
-  font-size: 30px; line-height: 1.1; text-align: center; width: min(50vw, 560px);
+  position: absolute; left: 50%; top: calc(88px + var(--st)); transform: translateX(-50%); z-index: 2;
+  background: var(--danger); color: #fff; padding: 7px 16px; border-radius: 10px;
+  font-size: 24px; line-height: 1.1; text-align: center; width: min(52vw, 620px);
   animation: alarm .4s steps(2) infinite;
 }
-#alarm small { display: block; font-size: 20px; margin-top: 4px; }
+#alarm small { display: block; font-size: 18px; margin-top: 2px; }
 @keyframes alarm { 50% { background: #8f1a12; } }
 
 #bigText {

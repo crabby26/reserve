@@ -1,6 +1,6 @@
 # Reserve
 
-Zwei Rostlauben, eine endlose Wüstenstraße, zu wenig Sprit für beide. **Reserve** ist ein Roadtrip-Rennen für zwei iPads im Browser. Wer zuerst Kilometer 100 erreicht, gewinnt. Eine Partie dauert etwa 10 bis 15 Minuten.
+Zwei Rostlauben, eine endlose Wüstenstraße, zu wenig Sprit für beide. **Reserve** ist ein 3D-Roadtrip-Rennen für zwei iPads im Browser, gefahren aus der Verfolgerperspektive. Wer zuerst Kilometer 100 erreicht, gewinnt. Eine Partie dauert etwa 10 bis 15 Minuten.
 
 Ohne Installation, ohne Konto, ohne IP-Adressen: Einer erstellt einen Raum, der andere gibt den Code ein.
 
@@ -64,7 +64,8 @@ Die vollständigen Notizen mit Quellen stehen in [`docs/recherche.md`](docs/rech
 
 ## Technik
 
-- `index.html`, `js/`, `css/`, `shared/`: Client ohne Build-Schritt und ohne Bibliotheken, läuft auf GitHub Pages.
+- `index.html`, `js/`, `css/`, `shared/`, `vendor/`: Client ohne Build-Schritt, läuft auf GitHub Pages. Die 3D-Darstellung nutzt three.js (MIT) und braucht WebGL.
+- Die Höhe existiert nur in der Darstellung (`js/render3d.js`). Physik und Regeln rechnen weiter in der Ebene, damit die Steuerung vorhersehbar bleibt.
 - `shared/`: Weltgenerator, Fahrphysik und Spielregeln. Client und Server nutzen dieselben Dateien.
 - `server/`: Node.js mit `ws`. Der Server verwaltet die Räume und entscheidet über Sprit, Items, Kollisionen und Sieg.
 - Die Welt entsteht aus einem Seed, den der Server vergibt. Übertragen werden nur Autos und Items, 20-mal pro Sekunde.

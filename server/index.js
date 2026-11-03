@@ -26,7 +26,7 @@ const server = http.createServer((req, res) => {
   }
   const rel = url.pathname === '/' ? 'index.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '');
   const file = path.normalize(path.join(ROOT, rel));
-  const allowed = /^(index\.html|config\.js|(js|css|shared|dev)[\\/][\w.-]+)$/.test(path.relative(ROOT, file));
+  const allowed = /^(index\.html|config\.js|(js|css|shared|dev|vendor)[\\/][\w.-]+)$/.test(path.relative(ROOT, file));
   if (!allowed) { res.writeHead(404); res.end('Not found'); return; }
   fs.readFile(file, (err, data) => {
     if (err) { res.writeHead(404); res.end('Not found'); return; }

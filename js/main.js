@@ -22,13 +22,12 @@
   let errX = 0, errY = 0, errA = 0;   // visual smoothing of corrections
   let prevX = 0, prevY = 0, prevA = 0;
   let acc = 0, lastT = 0, boostReq = 0, sendAcc = 0;
-  let cam = { x: 0, y: 0, zoom: 0.9 };
   let hudT = 0, slowFrames = 0, fpsT = 0, fpsN = 0;
   let toastN = 0, connTimer = null;
 
   function makeWorld(seed) {
     world = W.createWorld(seed);
-    R.init(world);
+    R.init(world, T);
     const tr = $('trackStations');
     tr.innerHTML = '';
     world.stations.forEach((s) => {
@@ -131,7 +130,6 @@
       car = S.createCar(0, 0);
       seq = m.ack || 0; pending = []; sendBuf = []; snaps = []; last = null;
       errX = errY = errA = 0;
-      cam.x = world.roadX(0); cam.y = -100;
       if (!m.resume) toast('Du fährst den ' + T.cars[you] + '.');
     }
     phase = 'play';
@@ -356,27 +354,14 @@
       cars.unshift(oState);
     }
 
-    // Camera: looks ahead along the velocity and zooms out with speed.
-    const baseZoom = R.size().H / 820;
-    const sp = Math.min(1, Math.hypot(car.vx, car.vy) / S.V_MAX);
-    const targetZoom = baseZoom * (1.02 - 0.3 * sp);
-    cam.zoom += (targetZoom - cam.zoom) * Math.min(1, dt * 1.6);
-    const tx = rx + car.vx * 0.38;
-    const ty = ry + car.vy * 0.82 - 150;
-    const follow = Math.min(1, dt * 5);
-    cam.x += (tx - cam.x) * follow;
-    cam.y += (ty - cam.y) * follow;
-
-    const scene = {
-      dt, cars, T,
+    R.frame({
+      dt, now, you, cars,
+      ents: snaps.length ? F.entsAt(remoteAt(now)) : [],
+      hose: last ? last.hose : null,
       stock: last ? last.stock : null,
+      env: last ? last.env : null,
       km: -car.y / W.KM,
-    };
-    const ents = snaps.length ? F.entsAt(remoteAt(now)) : [];
-    scene.drawWorld = (ctx, h) => F.drawRoadside(ctx, h, scene.stock, you, ents, now);
-    scene.drawTop = (ctx, h) => F.drawTop(ctx, h, cars, ents, last ? last.hose : null, now, dt);
-    scene.drawScreen = (ctx, sw, sh) => F.drawScreen(ctx, sw, sh, last ? last.env : null, dt);
-    R.frame(cam, scene);
+    });
   }
 
   function updateHud(dt) {
@@ -463,10 +448,9 @@
   let attractY = 0, attractWorld = null;
   function drawAttract(t, dt) {
     if (!attractWorld) { attractWorld = W.createWorld(4242); }
-    if (world !== attractWorld) { world = attractWorld; R.init(world); }
-    attractY -= dt * 60;
-    const zoom = R.size().H / 820 * 0.85;
-    R.frame({ x: world.roadX(attractY), y: attractY, zoom }, { dt, cars: [], T, stock: null, km: 0 });
+    if (world !== attractWorld) { world = attractWorld; R.init(world, T); }
+    attractY -= dt * 70;
+    R.attract(attractY, dt);
   }
 
   function startSolo() {
@@ -549,6 +533,11 @@
     }
   }
 
+  if (!R.ok) {
+    $('menu').querySelector('.panel').innerHTML = '<h1 class="logo">RESERVE</h1><p class="tagline">Dieses Gerät zeigt leider kein WebGL an. Ohne das bleibt die Wüste dunkel.</p>';
+    return;
+  }
+
   wireUi();
   showScreen('menu');
   showScores();
@@ -561,5 +550,6 @@
     get car() { return car; }, get last() { return last; }, get you() { return you; },
     get phase() { return phase; }, get toasts() { return toastN; }, get net() { return net; },
     get world() { return world; },
+    get gfx() { return R.info(); },
   };
 })();

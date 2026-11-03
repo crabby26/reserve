@@ -14,6 +14,7 @@
 </head>
 <body>
 <canvas id="game"></canvas>
+<div id="flash"></div>
 
 <!-- In-game HUD and touch controls -->
 <div id="hud" class="hidden">
@@ -128,6 +129,7 @@
 <div id="rotate" class="overlay"><h2>iPad bitte quer halten</h2><p>Hochkant passt die Wüste nicht aufs Display.</p></div>
 
 <script src="config.js"></script>
+<script src="vendor/three.min.js"></script>
 <script src="shared/world.js"></script>
 <script src="shared/sim.js"></script>
 <script src="shared/game.js"></script>
@@ -135,7 +137,7 @@
 <script src="js/texts.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/input.js"></script>
-<script src="js/render.js"></script>
+<script src="js/render3d.js"></script>
 <script src="js/fx.js"></script>
 <script src="js/net.js"></script>
 <script src="js/main.js"></script>
